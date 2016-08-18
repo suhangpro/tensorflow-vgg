@@ -1,38 +1,43 @@
-import os
-import tensorflow as tf
-
-import numpy as np
 import time
 import inspect
+import os
+import urllib.request
+
+import numpy as np
+import tensorflow as tf
 
 VGG_MEAN = [103.939, 116.779, 123.68]
+VGG19_URL = 'http://maxwell.cs.umass.edu/hsu/vgg19.npy'
 
 
+# noinspection PyAttributeOutsideInit
 class Vgg19:
-    def __init__(self, vgg19_npy_path=None):
+    def __init__(self, vgg19_npy_path=None, vgg19_url=VGG19_URL):
         if vgg19_npy_path is None:
             path = inspect.getfile(Vgg19)
             path = os.path.abspath(os.path.join(path, os.pardir))
-            path = os.path.join(path, "vgg19.npy")
-            vgg19_npy_path = path
-            print vgg19_npy_path
+            vgg19_npy_path = os.path.join(path, "vgg19.npy")
 
+        if not os.path.isfile(vgg19_npy_path):
+            start_time = time.time()
+            print('downloading vgg-19 model file ({}) ... '.format(VGG19_URL), end='', flush=True)
+            urllib.request.urlretrieve(vgg19_url, vgg19_npy_path)
+            print('done! ({} secs)'.format(time.time() - start_time))
         self.data_dict = np.load(vgg19_npy_path, encoding='latin1').item()
-        print("npy file loaded")
+        print("vgg-19 model file ({}) loaded. ".format(vgg19_npy_path))
 
     def build(self, rgb):
         """
         load variable from npy to build the VGG
 
-        :param rgb: rgb image [batch, height, width, 3] values scaled [0, 1]
+        :param rgb: rgb image [batch, height, width, 3] values scaled [0.0, 255.0]
         """
 
         start_time = time.time()
-        print("build model started")
-        rgb_scaled = rgb * 255.0
+        print("building vgg-19 model ... ", end='')
 
         # Convert RGB to BGR
-        red, green, blue = tf.split(3, 3, rgb_scaled)
+        red, green, blue = tf.split(3, 3, rgb)
         assert red.get_shape().as_list()[1:] == [224, 224, 1]
         assert green.get_shape().as_list()[1:] == [224, 224, 1]
         assert blue.get_shape().as_list()[1:] == [224, 224, 1]
@@ -81,7 +86,7 @@ class Vgg19:
         self.prob = tf.nn.softmax(self.fc8, name="prob")
 
         self.data_dict = None
-        print("build model finished: %ds" % (time.time() - start_time))
+        print("done! (%d secs)" % (time.time() - start_time))
 
     def avg_pool(self, bottom, name):
         return tf.nn.avg_pool(bottom, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME', name=name)
