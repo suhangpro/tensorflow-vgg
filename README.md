@@ -1,10 +1,18 @@
 # Tensorflow VGG16 and VGG19
 
-This is a Tensorflow implemention of VGG 16 and VGG 19 based on [tensorflow-vgg16](https://github.com/ry/tensorflow-vgg16) and [Caffe to Tensorflow](https://github.com/ethereon/caffe-tensorflow). Original Caffe implementation can be found in [here](https://gist.github.com/ksimonyan/211839e770f7b538e2d8) and [here](https://gist.github.com/ksimonyan/3785162f95cd2d5fee77).
+This is a modified version of [tensorflow-vgg](https://github.com/machrisaa/tensorflow-vgg). 
 
-We have modified the implementation of <a href="https://github.com/ry/tensorflow-vgg16">tensorflow-vgg16</a> to use numpy loading instead of default tensorflow model loading in order to speed up the initialisation and reduce the overall memory usage. This implementation enable further modify the network, e.g. remove the FC layers, or increase the batch size.
+New features: 
 
->To use the VGG networks, the npy files for [VGG16 NPY](https://mega.nz/#!YU1FWJrA!O1ywiCS2IiOlUCtCpI6HTJOMrneN-Qdv3ywQP5poecM) or [VGG19 NPY](https://mega.nz/#!xZ8glS6J!MAnE91ND_WyfZ_8mvkuSa2YcA7q-1ehfSm-Q1fxOvvs) has to be downloaded.
+ - VGG-16 and VGG-19 model files will be downloaded from a server if not found on disk. 
+ - Useful summaries can be added to all activations (turn on`summary` option of `build()`)
+ - In training mode (when `train` option of `build()` is set to `True`), all network parameters are variables instead of constants. 
+ - Weight decay can be added to all filters (set `weight_decay` option of `build()` to non-zero float values)
+ - Major layers can be accessed using the vgg object, i.e. `vgg.conv1`...`vgg.conv5`, `vgg.pool1`...`vgg.pool5`, `vgg.fc6`...`vgg.fc8`, `vgg.prob`, as well as the associated parameters: `vgg.conv1_params`...`vgg.conv5_params`, `vgg.fc6_params`...`vgg.fc8_params`. 
+
+Other changes: 
+
+ - Input should be in the range of [0.0, 255.0] instead of [0.0, 1.0]
 
 ##Usage
 Use this to build the VGG object
@@ -20,9 +28,4 @@ vgg.build(images)
 The `images` is a tensor with shape `[None, 224, 224, 3]`. 
 >Trick: the tensor can be a placeholder, a variable or even a constant.
 
-All the VGG layers (tensors) can then be accessed using the vgg object. For example, `vgg.conv1_1`, `vgg.conv1_2`, `vgg.pool5`, `vgg.prob`, ...
-
 `test_vgg16.py` and `test_vgg19.py` contain the sample usage.
-
-##Extra
-This library has been used in my another Tensorflow image style synethesis project: [stylenet](https://github.com/machrisaa/stylenet)

@@ -26,7 +26,7 @@ class Vgg19:
         self.data_dict = np.load(vgg19_npy_path, encoding='latin1').item()
         print("vgg-19 model file ({}) loaded. ".format(vgg19_npy_path))
 
-    def build(self, rgb):
+    def build(self, rgb, summary=False, weight_decay=0.0, train=False):
         """
         load variable from npy to build the VGG
 
@@ -48,40 +48,42 @@ class Vgg19:
         ])
         assert bgr.get_shape().as_list()[1:] == [224, 224, 3]
 
-        self.conv1_1 = self.conv_layer(bgr, "conv1_1")
-        self.conv1_2 = self.conv_layer(self.conv1_1, "conv1_2")
-        self.pool1 = self.max_pool(self.conv1_2, 'pool1')
+        self._conv1_1, self._conv1_1_params = self.conv_layer(bgr, "conv1_1", summary=summary, wd=weight_decay, train=train)
+        self._conv1_2, self._conv1_2_params = self.conv_layer(self._conv1_1, "conv1_2", summary=summary, wd=weight_decay, train=train)
+        self.pool1 = self.max_pool(self._conv1_2, 'pool1')
+        self.conv1, self.conv1_params = self._conv1_2, self._conv1_1_params + self._conv1_2_params
 
-        self.conv2_1 = self.conv_layer(self.pool1, "conv2_1")
-        self.conv2_2 = self.conv_layer(self.conv2_1, "conv2_2")
-        self.pool2 = self.max_pool(self.conv2_2, 'pool2')
+        self._conv2_1, self._conv2_1_params = self.conv_layer(self.pool1, "conv2_1", summary=summary, wd=weight_decay, train=train)
+        self._conv2_2, self._conv2_2_params = self.conv_layer(self._conv2_1, "conv2_2", summary=summary, wd=weight_decay, train=train)
+        self.pool2 = self.max_pool(self._conv2_2, 'pool2')
+        self.conv2, self.conv2_params = self._conv2_2, self._conv2_1_params + self._conv2_2_params
 
-        self.conv3_1 = self.conv_layer(self.pool2, "conv3_1")
-        self.conv3_2 = self.conv_layer(self.conv3_1, "conv3_2")
-        self.conv3_3 = self.conv_layer(self.conv3_2, "conv3_3")
-        self.conv3_4 = self.conv_layer(self.conv3_3, "conv3_4")
-        self.pool3 = self.max_pool(self.conv3_4, 'pool3')
+        self._conv3_1, self._conv3_1_params = self.conv_layer(self.pool2, "conv3_1", summary=summary, wd=weight_decay, train=train)
+        self._conv3_2, self._conv3_2_params = self.conv_layer(self._conv3_1, "conv3_2", summary=summary, wd=weight_decay, train=train)
+        self._conv3_3, self._conv3_3_params = self.conv_layer(self._conv3_2, "conv3_3", summary=summary, wd=weight_decay, train=train)
+        self._conv3_4, self._conv3_4_params = self.conv_layer(self._conv3_3, "conv3_4", summary=summary, wd=weight_decay, train=train)
+        self.pool3 = self.max_pool(self._conv3_4, 'pool3')
+        self.conv3, self.conv3_params = self._conv3_3, self._conv3_1_params + self._conv3_2_params + self._conv3_3_params + self._conv3_4_params
 
-        self.conv4_1 = self.conv_layer(self.pool3, "conv4_1")
-        self.conv4_2 = self.conv_layer(self.conv4_1, "conv4_2")
-        self.conv4_3 = self.conv_layer(self.conv4_2, "conv4_3")
-        self.conv4_4 = self.conv_layer(self.conv4_3, "conv4_4")
-        self.pool4 = self.max_pool(self.conv4_4, 'pool4')
+        self._conv4_1, self._conv4_1_params = self.conv_layer(self.pool3, "conv4_1", summary=summary, wd=weight_decay, train=train)
+        self._conv4_2, self._conv4_2_params = self.conv_layer(self._conv4_1, "conv4_2", summary=summary, wd=weight_decay, train=train)
+        self._conv4_3, self._conv4_3_params = self.conv_layer(self._conv4_2, "conv4_3", summary=summary, wd=weight_decay, train=train)
+        self._conv4_4, self._conv4_4_params = self.conv_layer(self._conv4_3, "conv4_4", summary=summary, wd=weight_decay, train=train)
+        self.pool4 = self.max_pool(self._conv4_4, 'pool4')
+        self.conv4, self.conv4_params = self._conv4_3, self._conv4_1_params + self._conv4_2_params + self._conv4_3_params + self._conv4_4_params
 
-        self.conv5_1 = self.conv_layer(self.pool4, "conv5_1")
-        self.conv5_2 = self.conv_layer(self.conv5_1, "conv5_2")
-        self.conv5_3 = self.conv_layer(self.conv5_2, "conv5_3")
-        self.conv5_4 = self.conv_layer(self.conv5_3, "conv5_4")
-        self.pool5 = self.max_pool(self.conv5_4, 'pool5')
+        self._conv5_1, self._conv5_1_params = self.conv_layer(self.pool4, "conv5_1", summary=summary, wd=weight_decay, train=train)
+        self._conv5_2, self._conv5_2_params = self.conv_layer(self._conv5_1, "conv5_2", summary=summary, wd=weight_decay, train=train)
+        self._conv5_3, self._conv5_3_params = self.conv_layer(self._conv5_2, "conv5_3", summary=summary, wd=weight_decay, train=train)
+        self._conv5_4, self._conv5_4_params = self.conv_layer(self._conv5_3, "conv5_4", summary=summary, wd=weight_decay, train=train)
+        self.pool5 = self.max_pool(self._conv5_4, 'pool5')
+        self.conv5, self.conv5_params = self._conv3_3, self._conv5_1_params + self._conv5_2_params + self._conv5_3_params + self._conv5_4_params
 
-        self.fc6 = self.fc_layer(self.pool5, "fc6")
-        assert self.fc6.get_shape().as_list()[1:] == [4096]
-        self.relu6 = tf.nn.relu(self.fc6)
+        self.fc6, self.fc6_params = self.fc_layer(self.pool5, "fc6", summary=summary, wd=weight_decay, train=train)
 
-        self.fc7 = self.fc_layer(self.relu6, "fc7")
-        self.relu7 = tf.nn.relu(self.fc7)
+        self.fc7, self.fc7_params = self.fc_layer(self.fc6, "fc7", summary=summary, wd=weight_decay, train=train)
 
-        self.fc8 = self.fc_layer(self.relu7, "fc8")
+        self.fc8, self.fc8_params = self.fc_layer(self.fc7, "fc8", relu=False, summary=summary, wd=weight_decay, train=train)
 
         self.prob = tf.nn.softmax(self.fc8, name="prob")
 
@@ -94,19 +96,28 @@ class Vgg19:
     def max_pool(self, bottom, name):
         return tf.nn.max_pool(bottom, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME', name=name)
 
-    def conv_layer(self, bottom, name):
+    def conv_layer(self, bottom, name, relu=True, summary=False, wd=0.0, train=False):
         with tf.variable_scope(name):
-            filt = self.get_conv_filter(name)
+            filt = self.get_weight(name, use_variable=train)
 
             conv = tf.nn.conv2d(bottom, filt, [1, 1, 1, 1], padding='SAME')
 
-            conv_biases = self.get_bias(name)
+            conv_biases = self.get_bias(name, use_variable=train)
             bias = tf.nn.bias_add(conv, conv_biases)
 
-            relu = tf.nn.relu(bias)
-            return relu
+            if relu:
+                relu = tf.nn.relu(bias)
 
-    def fc_layer(self, bottom, name):
+            if summary:
+                tf.histogram_summary('activations', relu)
+                tf.scalar_summary('sparsity', tf.nn.zero_fraction(relu))
+
+            if wd > 0:
+                weight_decay = wd * tf.nn.l2_loss(filt)
+                tf.add_to_collection('losses', weight_decay)
+            return relu, [filt, bias]
+
+    def fc_layer(self, bottom, name, relu=True, summary=False, wd=0.0, train=False):
         with tf.variable_scope(name):
             shape = bottom.get_shape().as_list()
             dim = 1
@@ -114,20 +125,33 @@ class Vgg19:
                 dim *= d
             x = tf.reshape(bottom, [-1, dim])
 
-            weights = self.get_fc_weight(name)
-            biases = self.get_bias(name)
+            weights = self.get_weight(name, use_variable=train)
+            biases = self.get_bias(name, use_variable=train)
 
             # Fully connected layer. Note that the '+' operation automatically
             # broadcasts the biases.
             fc = tf.nn.bias_add(tf.matmul(x, weights), biases)
 
-            return fc
+            if relu:
+                fc = tf.nn.relu(fc)
 
-    def get_conv_filter(self, name):
-        return tf.constant(self.data_dict[name][0], name="filter")
+            if summary:
+                tf.histogram_summary('activations', fc)
+                tf.scalar_summary('sparsity', tf.nn.zero_fraction(fc))
 
-    def get_bias(self, name):
-        return tf.constant(self.data_dict[name][1], name="biases")
+            if wd > 0:
+                weight_decay = wd * tf.nn.l2_loss(weights)
+                tf.add_to_collection('losses', weight_decay)
+            return fc, [weights, biases]
 
-    def get_fc_weight(self, name):
-        return tf.constant(self.data_dict[name][0], name="weights")
+    def get_weight(self, name, use_variable=False):
+        if use_variable:
+            return tf.get_variable('weights', initializer=tf.constant(self.data_dict[name][0]))
+        else:
+            return tf.constant(self.data_dict[name][0], name='weights')
+
+    def get_bias(self, name, use_variable=False):
+        if use_variable:
+            return tf.get_variable('biases', initializer=tf.constant(self.data_dict[name][1]))
+        else:
+            return tf.constant(self.data_dict[name][1], name='biases')
