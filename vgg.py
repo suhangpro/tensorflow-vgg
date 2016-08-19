@@ -7,24 +7,30 @@ import numpy as np
 import tensorflow as tf
 
 VGG_MEAN = [103.939, 116.779, 123.68]
+VGG16_URL = 'http://maxwell.cs.umass.edu/hsu/vgg16.npy'
 VGG19_URL = 'http://maxwell.cs.umass.edu/hsu/vgg19.npy'
 
 
 # noinspection PyAttributeOutsideInit
-class Vgg19:
-    def __init__(self, vgg19_npy_path=None, vgg19_url=VGG19_URL):
-        if vgg19_npy_path is None:
-            path = inspect.getfile(Vgg19)
+class VggVd:
+    def __init__(self, model='vgg16', npy_path=None):
+        if npy_path is None:
+            path = inspect.getfile(VggVd)
             path = os.path.abspath(os.path.join(path, os.pardir))
-            vgg19_npy_path = os.path.join(path, "vgg19.npy")
+            npy_path = os.path.join(path, "{}.npy".format(model))
 
-        if not os.path.isfile(vgg19_npy_path):
+        if not os.path.isfile(npy_path):
+            if model == 'vgg16':
+                npy_url = VGG16_URL
+            else:
+                npy_url = VGG19_URL
             start_time = time.time()
-            print('downloading vgg-19 model file ({}) ... '.format(VGG19_URL), end='', flush=True)
-            urllib.request.urlretrieve(vgg19_url, vgg19_npy_path)
+            print('downloading model file ({}) ... '.format(npy_url), end='', flush=True)
+            urllib.request.urlretrieve(npy_url, npy_path)
             print('done! ({} secs)'.format(time.time() - start_time))
-        self.data_dict = np.load(vgg19_npy_path, encoding='latin1').item()
-        print("vgg-19 model file ({}) loaded. ".format(vgg19_npy_path))
+        self.data_dict = np.load(npy_path, encoding='latin1').item()
+        self.model = model
+        print("model file ({}) loaded. ".format(npy_path))
 
     def build(self, rgb, summary=False, weight_decay=0.0, train=False):
         """
@@ -34,7 +40,7 @@ class Vgg19:
         """
 
         start_time = time.time()
-        print("building vgg-19 model ... ", end='')
+        print("building {} model ... ".format(self.model), end='')
 
         # Convert RGB to BGR
         red, green, blue = tf.split(3, 3, rgb)
@@ -48,41 +54,64 @@ class Vgg19:
         ])
         assert bgr.get_shape().as_list()[1:] == [224, 224, 3]
 
+        # CONV1
         self._conv1_1, self._conv1_1_params = self.conv_layer(bgr, "conv1_1", summary=summary, wd=weight_decay, train=train)
         self._conv1_2, self._conv1_2_params = self.conv_layer(self._conv1_1, "conv1_2", summary=summary, wd=weight_decay, train=train)
         self.pool1 = self.max_pool(self._conv1_2, 'pool1')
         self.conv1, self.conv1_params = self._conv1_2, self._conv1_1_params + self._conv1_2_params
 
+        # CONV2
         self._conv2_1, self._conv2_1_params = self.conv_layer(self.pool1, "conv2_1", summary=summary, wd=weight_decay, train=train)
         self._conv2_2, self._conv2_2_params = self.conv_layer(self._conv2_1, "conv2_2", summary=summary, wd=weight_decay, train=train)
         self.pool2 = self.max_pool(self._conv2_2, 'pool2')
         self.conv2, self.conv2_params = self._conv2_2, self._conv2_1_params + self._conv2_2_params
 
+        # CONV3
         self._conv3_1, self._conv3_1_params = self.conv_layer(self.pool2, "conv3_1", summary=summary, wd=weight_decay, train=train)
         self._conv3_2, self._conv3_2_params = self.conv_layer(self._conv3_1, "conv3_2", summary=summary, wd=weight_decay, train=train)
         self._conv3_3, self._conv3_3_params = self.conv_layer(self._conv3_2, "conv3_3", summary=summary, wd=weight_decay, train=train)
-        self._conv3_4, self._conv3_4_params = self.conv_layer(self._conv3_3, "conv3_4", summary=summary, wd=weight_decay, train=train)
-        self.pool3 = self.max_pool(self._conv3_4, 'pool3')
-        self.conv3, self.conv3_params = self._conv3_4, self._conv3_1_params + self._conv3_2_params + self._conv3_3_params + self._conv3_4_params
+        self.conv3_params = self._conv3_1_params + self._conv3_2_params + self._conv3_3_params
+        if self.model == 'vgg19':
+            self._conv3_4, self._conv3_4_params = self.conv_layer(self._conv3_3, "conv3_4", summary=summary, wd=weight_decay, train=train)
+            self.conv3 = self._conv3_4
+            self.conv3_params += self._conv3_4_params
+        else:
+            self.conv3 = self._conv3_3
+        self.pool3 = self.max_pool(self.conv3, 'pool3')
 
+        # CONV4
         self._conv4_1, self._conv4_1_params = self.conv_layer(self.pool3, "conv4_1", summary=summary, wd=weight_decay, train=train)
         self._conv4_2, self._conv4_2_params = self.conv_layer(self._conv4_1, "conv4_2", summary=summary, wd=weight_decay, train=train)
         self._conv4_3, self._conv4_3_params = self.conv_layer(self._conv4_2, "conv4_3", summary=summary, wd=weight_decay, train=train)
-        self._conv4_4, self._conv4_4_params = self.conv_layer(self._conv4_3, "conv4_4", summary=summary, wd=weight_decay, train=train)
-        self.pool4 = self.max_pool(self._conv4_4, 'pool4')
-        self.conv4, self.conv4_params = self._conv4_4, self._conv4_1_params + self._conv4_2_params + self._conv4_3_params + self._conv4_4_params
+        self.conv4_params = self._conv4_1_params + self._conv4_2_params + self._conv4_3_params
+        if self.model == 'vgg19':
+            self._conv4_4, self._conv4_4_params = self.conv_layer(self._conv4_3, "conv4_4", summary=summary, wd=weight_decay, train=train)
+            self.conv4 = self._conv4_4
+            self.conv4_params += self._conv4_4_params
+        else:
+            self.conv4 = self._conv4_3
+        self.pool4 = self.max_pool(self.conv4, 'pool4')
 
+        # CONV5
         self._conv5_1, self._conv5_1_params = self.conv_layer(self.pool4, "conv5_1", summary=summary, wd=weight_decay, train=train)
         self._conv5_2, self._conv5_2_params = self.conv_layer(self._conv5_1, "conv5_2", summary=summary, wd=weight_decay, train=train)
         self._conv5_3, self._conv5_3_params = self.conv_layer(self._conv5_2, "conv5_3", summary=summary, wd=weight_decay, train=train)
-        self._conv5_4, self._conv5_4_params = self.conv_layer(self._conv5_3, "conv5_4", summary=summary, wd=weight_decay, train=train)
-        self.pool5 = self.max_pool(self._conv5_4, 'pool5')
-        self.conv5, self.conv5_params = self._conv5_4, self._conv5_1_params + self._conv5_2_params + self._conv5_3_params + self._conv5_4_params
+        self.conv5_params = self._conv5_1_params + self._conv5_2_params + self._conv5_3_params
+        if self.model == 'vgg19':
+            self._conv5_4, self._conv5_4_params = self.conv_layer(self._conv5_3, "conv5_4", summary=summary, wd=weight_decay, train=train)
+            self.conv5 = self._conv5_4
+            self.conv5_params += self._conv5_4_params
+        else:
+            self.conv5 = self._conv5_3
+        self.pool5 = self.max_pool(self.conv5, 'pool5')
 
+        # FC6
         self.fc6, self.fc6_params = self.fc_layer(self.pool5, "fc6", summary=summary, wd=weight_decay, train=train)
 
+        # FC7
         self.fc7, self.fc7_params = self.fc_layer(self.fc6, "fc7", summary=summary, wd=weight_decay, train=train)
 
+        # FC8
         self.fc8, self.fc8_params = self.fc_layer(self.fc7, "fc8", relu=False, summary=summary, wd=weight_decay, train=train)
 
         self.prob = tf.nn.softmax(self.fc8, name="prob")

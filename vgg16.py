@@ -74,7 +74,7 @@ class Vgg16:
         self._conv5_2, self._conv5_2_params = self.conv_layer(self._conv5_1, "conv5_2", summary=summary, wd=weight_decay, train=train)
         self._conv5_3, self._conv5_3_params = self.conv_layer(self._conv5_2, "conv5_3", summary=summary, wd=weight_decay, train=train)
         self.pool5 = self.max_pool(self._conv5_3, 'pool5')
-        self.conv5, self.conv5_params = self._conv3_3, self._conv5_1_params + self._conv5_2_params + self._conv5_3_params
+        self.conv5, self.conv5_params = self._conv5_3, self._conv5_1_params + self._conv5_2_params + self._conv5_3_params
 
         self.fc6, self.fc6_params = self.fc_layer(self.pool5, "fc6", summary=summary, wd=weight_decay, train=train)
 

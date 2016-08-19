@@ -5,6 +5,7 @@ This is a modified version of [tensorflow-vgg](https://github.com/machrisaa/tens
 New features: 
 
  - VGG-16 and VGG-19 model files will be downloaded from a server if not found on disk. 
+ - A unified interface is provided: you can now use `vgg.VggVd(model='vgg16')` and `vgg.VggVd(model='vgg19')`
  - Useful summaries can be added to all activations (turn on`summary` option of `build()`)
  - In training mode (when `train` option of `build()` is set to `True`), all network parameters are variables instead of constants. 
  - Weight decay can be added to all filters (set `weight_decay` option of `build()` to non-zero float values)
@@ -17,13 +18,13 @@ Other changes:
 ##Usage
 Use this to build the VGG object
 ```
-vgg = vgg19.Vgg19()
-vgg.build(images)
+net = vgg.VggVd(model='vgg19') # equiv. vgg19.Vgg19()
+net.build(images)
 ```
 or
 ```
-vgg = vgg16.Vgg16()
-vgg.build(images)
+net = vgg.VggVd(model='vgg16') # equiv. vgg16.Vgg16()
+net.build(images)
 ```
 The `images` is a tensor with shape `[None, 224, 224, 3]`. 
 >Trick: the tensor can be a placeholder, a variable or even a constant.
