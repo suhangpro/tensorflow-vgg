@@ -144,7 +144,7 @@ class VggVd:
             if wd > 0:
                 weight_decay = wd * tf.nn.l2_loss(filt)
                 tf.add_to_collection('losses', weight_decay)
-            return relu, [filt, bias]
+            return relu, [filt, conv_biases]
 
     def fc_layer(self, bottom, name, relu=True, summary=False, wd=0.0, train=False):
         with tf.variable_scope(name):
