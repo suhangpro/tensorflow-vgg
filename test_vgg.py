@@ -17,8 +17,8 @@ with tf.Session() as sess:
     feed_dict = {images: batch}
 
     net = vgg.VggVd(model='vgg16')
-    with tf.name_scope("content_vgg"):
-        net.build(images)
+    with tf.variable_scope('stream0'):
+        net.build(images, name='tower0')
 
     prob = sess.run(net.prob, feed_dict=feed_dict)
     print(prob)
