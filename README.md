@@ -1,11 +1,11 @@
-# Tensorflow VGG16 and VGG19
+# Tensorflow VGG models (VGG-M, VGG-16 and VGG-19)
 
 This is a modified version of [tensorflow-vgg](https://github.com/machrisaa/tensorflow-vgg). 
 
 New features: 
 
- - VGG-16 and VGG-19 model files will be downloaded from a server if not found on disk. 
- - A unified interface is provided: you can now use `vgg.VggVd(model='vgg16')` and `vgg.VggVd(model='vgg19')`
+ - VGG-M, VGG-16 and VGG-19 model files will be downloaded from a server if not found on disk. 
+ - A unified interface is provided: you can now use `vgg.VggNet(model='vgg16')` and `vgg.VggNet(model='vgg19')`
  - Support building only part of the vgg networks with the `layer_range` option of `build()`
  - Optional random initialization for the last layer for the use in fine-tuning (set the `num_classes` option of `build()`)
  - Useful summaries can be added to all activations (turn on the `summary` option of `build()`)
@@ -20,18 +20,14 @@ Other changes:
 ##Usage
 Use this to build the VGG object
 ```
-net = vgg.VggVd(model='vgg19')
-net.build(images)
-```
-or
-```
-net = vgg.VggVd(model='vgg16')
+net = vgg.VggNet(model='vggm') # other choices are 'vgg16' and 'vgg19'
 net.build(images)
 ```
 The `images` is a tensor with shape `[None, 224, 224, 3]`. 
+
 Create a network for fine-tuning: 
 ```
-net = vgg.VggVd()
+net = vgg.VggNet()
 prob, params = net.build(images, num_classes=NUM_CLASSES, use_variable=True, summary=True, weight_decay=0.001)
 ```
 >Trick: the tensor can be a placeholder, a variable or even a constant.

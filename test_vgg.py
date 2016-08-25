@@ -16,7 +16,7 @@ with tf.Session() as sess:
     images = tf.placeholder("float", [2, 224, 224, 3])
     feed_dict = {images: batch}
 
-    net = vgg.VggVd(model='vgg16')
+    net = vgg.VggNet(model='vgg16')
     with tf.variable_scope('stream0'):
         net.build(images, name='tower0')
 
